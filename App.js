@@ -2,6 +2,8 @@ import { StatusBar } from "expo-status-bar";
 import React, { useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import * as Location from "expo-location";
+import WeatherInfo from "./components/WeatherInfo";
+import UnitSelector from "./components/UnitSelector";
 
 const WEATHER_API_KEY = "8dbeaea513aaf14ae1a3a5b7f4c24cf5";
 const BASE_WEATHER_URL = "https://api.openweathermap.org/data/2.5/weather?";
@@ -9,9 +11,11 @@ const BASE_WEATHER_URL = "https://api.openweathermap.org/data/2.5/weather?";
 export default function App() {
   const [errorMessage, setErrorMessage] = useState("");
   const [currentWeather, setCurrentWeather] = useState(null);
+  const [unitsSystem, setunitsSystem] = useState("metric");
+
   useEffect(() => {
     load();
-  }, []);
+  }, [unitsSystem]);
   async function load() {
     try {
       let { status } = await Location.requestPermissionsAsync();
@@ -21,7 +25,7 @@ export default function App() {
       }
       const location = await Location.getCurrentPositionAsync();
       const { latitude, longitude } = location.coords;
-      const weatherUrl = `${BASE_WEATHER_URL}lat=${latitude}&lon=${longitude}&appid=${WEATHER_API_KEY}`;
+      const weatherUrl = `${BASE_WEATHER_URL}lat=${latitude}&lon=${longitude}&units=${unitsSystem}&appid=${WEATHER_API_KEY}`;
       const response = await fetch(weatherUrl);
       const result = await response.json();
 
@@ -31,16 +35,20 @@ export default function App() {
         setErrorMessage(result.message);
       }
     } catch (error) {
-      setErrorMessage(error);
+      setErrorMessage(error.message);
     }
   }
   if (currentWeather) {
-    const { main : { temp } } = currentWeather;
-
     return (
       <View style={styles.container}>
-        <Text>{temp}</Text>
         <StatusBar style="auto" />
+        <View style={styles.main}>
+          <UnitSelector
+            unitsSystem={unitsSystem}
+            setUnitsSystem={setunitsSystem}
+          />
+          <WeatherInfo currentWeather={currentWeather} />
+        </View>
       </View>
     );
   } else {
@@ -56,8 +64,11 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "red",
-    alignItems: "center",
+    backgroundColor: "#fff",
     justifyContent: "center",
+  },
+  main: {
+    justifyContent: "center",
+    flex: 1,
   },
 });
